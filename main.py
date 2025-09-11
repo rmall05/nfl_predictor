@@ -26,9 +26,41 @@ import nfl_data_py as nfl
 
 
 #print(nfl.see_pbp_cols())
-season= nfl.import_pbp_data([2024])
+# season1 = nfl.import_pbp_data([2024])
+# print(nfl.see_pbp_cols())
 
-season_pbp = (
-    season.groupby(['game_id', 'home_team', 'away_team'])
-)
-print(season_pbp.head())
+# season_pbp = (
+#     season.groupby(['game_id', 'home_team', 'away_team'])
+# )
+# print(season_pbp.head())
+
+def data_processing(years):
+    raw_season = nfl.import_pbp_data(years)
+    season = raw_season[raw_season["play_type"].isin(["run", "pass"]) & raw_season["epa"].notna()].copy()
+
+
+    season['turnover'] = ((season.get("interception", 0).fillna(0) > 0) | (season.get("fumble_lost", 0).fillna(0) > 0)).astype(int)
+    season["pass_yards"] = np.where(season["play_type"] == "pass", season["yards_gained"], 0)
+    season["rush_yards"] = np.where(season["play_type"] == "run", season["yards_gained"], 0)
+    team_game = (
+        season.groupby(["season", "week", "game_id", "posteam"], as_index=False)
+           .agg(
+               plays=("epa", "size"),
+               pass_yards=("pass_yards", "sum"),
+               rush_yards=("rush_yards", "sum"),
+               turnovers=("turnover", "sum"),
+               epa_total=("epa", "sum")
+           )
+    )
+    team_game["epa_per_play"] = team_game["epa_total"] / team_game["plays"].replace(0, np.nan)
+
+    team_game = team_game.rename(columns={"posteam": "team"})
+
+    return team_game.sort_values(["season", "week", "game_id", "team"]).reset_index(drop=True)
+
+
+
+print(data_processing([2024]))
+
+
+
