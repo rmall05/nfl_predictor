@@ -220,11 +220,13 @@ def add_momentum_simple(df: pd.DataFrame, metric: str, ema_span: int = 5) -> pd.
     return out
 
 
-season = load_and_prepare_pbp([2024])
-off = offensive_stats(season)
-deffense = defensive_stats(season)
+## Testing outputs
+# year_list = [2015,2016,2017,2018,2019,2020]
+# season = load_and_prepare_pbp(year_list)
+# off = offensive_stats(season)
+# deffense = defensive_stats(season)
 
-off_with_momentum = add_momentum_simple(off, metric="epa_per_play", ema_span=5)
-print(off_with_momentum[["season","week","team","momentum_score"]].tail(5))
+# off_with_momentum = add_momentum_simple(off, metric="epa_per_play", ema_span=5)
+# print(off_with_momentum[["season","week","team","momentum_score"]].tail(5))
 
 
