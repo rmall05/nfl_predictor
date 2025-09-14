@@ -1,0 +1,130 @@
+{
+  "pca_optimization": [
+    [
+      5,
+      0.8494557562578764,
+      0.6753152089078985
+    ],
+    [
+      7,
+      0.8700177913958833,
+      0.7703974970905293
+    ],
+    [
+      9,
+      0.8719977019446984,
+      0.84471441783696
+    ],
+    [
+      11,
+      0.8736841780127999,
+      0.8939539973498047
+    ],
+    [
+      13,
+      0.8740424769576713,
+      0.93530959874109
+    ],
+    [
+      15,
+      0.874632434703106,
+      0.9601688925710493
+    ],
+    [
+      17,
+      0.876145938866787,
+      0.9754238496520321
+    ],
+    [
+      19,
+      0.8769335787887024,
+      0.9854684946826764
+    ]
+  ],
+  "best_n_components": 19,
+  "explained_variance": 0.9854684946826764,
+  "validation_report": {
+    "issues": [
+      "Zero variance feature: play_action_rate",
+      "Zero variance feature: play_action_rate_allowed"
+    ],
+    "warnings": [],
+    "stats": {
+      "train_games": 3144,
+      "train_teams": 32,
+      "validation_games": 1138,
+      "validation_teams": 32,
+      "test_games": 1140,
+      "test_teams": 32
+    },
+    "recommendations": [
+      "Review issues and warnings before proceeding"
+    ]
+  },
+  "train_accuracy": 0.808206106870229,
+  "train_roc_auc": 0.8960110847266128,
+  "validation_accuracy": 0.7847100175746925,
+  "validation_roc_auc": 0.8769335787887024,
+  "test_accuracy": 0.8026315789473685,
+  "test_roc_auc": 0.8855155432440751,
+  "train_val_gap_acc": 0.023496089295536482,
+  "train_val_gap_auc": 0.019077505937910466,
+  "val_test_gap_acc": -0.017921561372675976,
+  "val_test_gap_auc": -0.008581964455372737,
+  "momentum_optimization": {
+    "EPA 1-game": {
+      "metric": "epa_per_play",
+      "ema_span": 1,
+      "test_accuracy": 0.8157894736842105,
+      "test_auc": 0.8907725453985842
+    },
+    "EPA 3-game": {
+      "metric": "epa_per_play",
+      "ema_span": 3,
+      "test_accuracy": 0.8140350877192982,
+      "test_auc": 0.8903908895044629
+    },
+    "EPA 5-game": {
+      "metric": "epa_per_play",
+      "ema_span": 5,
+      "test_accuracy": 0.8157894736842105,
+      "test_auc": 0.8900092336103416
+    },
+    "EPA 7-game": {
+      "metric": "epa_per_play",
+      "ema_span": 7,
+      "test_accuracy": 0.8157894736842105,
+      "test_auc": 0.8900954139735302
+    },
+    "Success Rate 3-game": {
+      "metric": "success_rate",
+      "ema_span": 3,
+      "test_accuracy": 0.8122807017543859,
+      "test_auc": 0.8910064635272391
+    },
+    "Success Rate 5-game": {
+      "metric": "success_rate",
+      "ema_span": 5,
+      "test_accuracy": 0.8140350877192982,
+      "test_auc": 0.8902554632194521
+    },
+    "Explosive Rate 3-game": {
+      "metric": "explosive_rate",
+      "ema_span": 3,
+      "test_accuracy": 0.8122807017543859,
+      "test_auc": 0.8911542012927055
+    },
+    "Explosive Rate 5-game": {
+      "metric": "explosive_rate",
+      "ema_span": 5,
+      "test_accuracy": 0.8122807017543859,
+      "test_auc": 0.8912157586949829
+    }
+  },
+  "best_momentum_config": {
+    "metric": "explosive_rate",
+    "ema_span": 5,
+    "test_accuracy": 0.8122807017543859,
+    "test_auc": 0.8912157586949829
+  }
+}

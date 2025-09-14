@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(find:*)",
+      "Bash(pip install:*)",
+      "WebFetch(domain:v0.app)",
+      "Read(//c/Users/Rakendu Malladi/Downloads/**)",
+      "Bash(unzip:*)",
+      "Bash(npm install)",
+      "Bash(venvScripts:*)",
+      "Bash(.venvScriptsactivate)",
+      "Bash(curl:*)",
+      "Bash(move api.py backend )",
+      "Bash(move simple_api.py backend )",
+      "Bash(move lib backend )",
+      "Bash(move main.py backend )",
+      "Bash(move predictor.py backend )",
+      "Bash(move clustering.py backend )",
+      "Bash(move requirements.txt backend)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "model_type": "random_forest",
+  "best_model_params": {
+    "n_estimators": 200,
+    "max_depth": 15,
+    "pca_components": 20
+  },
+  "pca_components": "20",
+  "features_used": "52",
+  "explained_variance": 0.9894369687075126,
+  "clustering_removed": true,
+  "hyperopt_enabled": false,
+  "optimization_results": {},
+  "train_roc_auc": "0.9999623656697212",
+  "train_accuracy": "0.996501272264631",
+  "validation_roc_auc": "0.8568966369319726",
+  "validation_accuracy": "0.7926186291739895",
+  "test_roc_auc": "0.8723084025854109",
+  "test_accuracy": "0.787719298245614",
+  "train_val_gap_acc": "0.20388264309064152",
+  "train_val_gap_auc": "0.1430657287377486",
+  "val_test_gap_acc": "0.004899330928375467",
+  "val_test_gap_auc": "-0.01541176565343827",
+  "momentum_optimization": {
+    "EPA 1-game": {
+      "metric": "epa_per_play",
+      "ema_span": 1,
+      "test_accuracy": 0.8157894736842105,
+      "test_auc": 0.8907725453985842
+    },
+    "EPA 3-game": {
+      "metric": "epa_per_play",
+      "ema_span": 3,
+      "test_accuracy": 0.8140350877192982,
+      "test_auc": 0.8903908895044629
+    },
+    "EPA 5-game": {
+      "metric": "epa_per_play",
+      "ema_span": 5,
+      "test_accuracy": 0.8157894736842105,
+      "test_auc": 0.8900092336103416
+    },
+    "EPA 7-game": {
+      "metric": "epa_per_play",
+      "ema_span": 7,
+      "test_accuracy": 0.8157894736842105,
+      "test_auc": 0.8900954139735302
+    },
+    "Success Rate 3-game": {
+      "metric": "success_rate",
+      "ema_span": 3,
+      "test_accuracy": 0.8122807017543859,
+      "test_auc": 0.8910064635272391
+    },
+    "Success Rate 5-game": {
+      "metric": "success_rate",
+      "ema_span": 5,
+      "test_accuracy": 0.8140350877192982,
+      "test_auc": 0.8902554632194521
+    },
+    "Explosive Rate 3-game": {
+      "metric": "explosive_rate",
+      "ema_span": 3,
+      "test_accuracy": 0.8122807017543859,
+      "test_auc": 0.8911542012927055
+    },
+    "Explosive Rate 5-game": {
+      "metric": "explosive_rate",
+      "ema_span": 5,
+      "test_accuracy": 0.8122807017543859,
+      "test_auc": 0.8912157586949829
+    }
+  },
+  "best_momentum_config": {
+    "metric": "explosive_rate",
+    "ema_span": 5,
+    "test_accuracy": 0.8122807017543859,
+    "test_auc": 0.8912157586949829
+  }
+}

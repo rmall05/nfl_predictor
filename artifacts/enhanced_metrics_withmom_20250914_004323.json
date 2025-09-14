@@ -1,0 +1,74 @@
+{
+  "pca_optimization": [
+    [
+      5,
+      0.8466264301069955,
+      0.7151748926886989
+    ],
+    [
+      7,
+      0.8675282314858287,
+      0.8085732891569363
+    ],
+    [
+      9,
+      0.8687884553608936,
+      0.8744020720767955
+    ],
+    [
+      11,
+      0.868658726432578,
+      0.9258065789346226
+    ],
+    [
+      13,
+      0.8693506140502607,
+      0.9618269659573391
+    ],
+    [
+      15,
+      0.8715683609676542,
+      0.9788572401209843
+    ],
+    [
+      17,
+      0.872013145864736,
+      0.9900187615954585
+    ],
+    [
+      19,
+      0.8719328374805407,
+      0.9937208774371535
+    ]
+  ],
+  "best_n_components": 17,
+  "explained_variance": 0.9900187615954585,
+  "validation_report": {
+    "issues": [
+      "Zero variance feature: play_action_rate",
+      "Zero variance feature: play_action_rate_allowed"
+    ],
+    "warnings": [],
+    "stats": {
+      "train_games": 3144,
+      "train_teams": 32,
+      "validation_games": 1138,
+      "validation_teams": 32,
+      "test_games": 1140,
+      "test_teams": 32
+    },
+    "recommendations": [
+      "Review issues and warnings before proceeding"
+    ]
+  },
+  "train_accuracy": 0.8002544529262087,
+  "train_roc_auc": 0.8901490319479045,
+  "validation_accuracy": 0.7829525483304042,
+  "validation_roc_auc": 0.872013145864736,
+  "test_accuracy": 0.7956140350877193,
+  "test_roc_auc": 0.8800615574022776,
+  "train_val_gap_acc": 0.017301904595804496,
+  "train_val_gap_auc": 0.018135886083168518,
+  "val_test_gap_acc": -0.012661486757315155,
+  "val_test_gap_auc": -0.008048411537541655
+}

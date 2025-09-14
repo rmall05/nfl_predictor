@@ -1,0 +1,9 @@
+pandas==2.2.3
+numpy
+nfl_data_py
+scikit-learn
+joblib
+matplotlib
+flask
+flask-cors
+xgboost

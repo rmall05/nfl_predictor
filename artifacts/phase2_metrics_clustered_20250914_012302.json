@@ -1,0 +1,23 @@
+{
+  "clustering_enabled": true,
+  "hyperopt_enabled": false,
+  "best_params": {
+    "pca_components": 17,
+    "model_C": 1.0,
+    "team_clusters": 6,
+    "context_clusters": 4
+  },
+  "features_used": 56,
+  "explained_variance": 0.9624909332664777,
+  "train_accuracy": 0.8056615776081425,
+  "train_roc_auc": 0.8954081261017148,
+  "validation_accuracy": 0.7820738137082601,
+  "validation_roc_auc": 0.8776007561343251,
+  "test_accuracy": 0.7982456140350878,
+  "test_roc_auc": 0.8836503539550631,
+  "train_val_gap_acc": 0.023587763899882375,
+  "train_val_gap_auc": 0.01780736996738974,
+  "val_test_gap_acc": -0.016171800326827634,
+  "val_test_gap_auc": -0.006049597820737995,
+  "team_style_results": {
+    "team_profiles": 
