@@ -3,6 +3,18 @@ venv/
 env/
 ENV/
 
+# Model artifacts
+artifacts/
+*.joblib
+*.pkl
+*.sav
+
+# Logs
+*.log
+
+# Cursor / Claude settings
+.claude/
+
 # Python
 __pycache__/
 *.py[cod]
