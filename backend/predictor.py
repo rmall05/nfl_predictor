@@ -22,7 +22,6 @@ from main import (
     defensive_stats,
     add_momentum_simple,
 )
-from clustering import NFLClustering
 
 ###############################################################################
 # Dataset assembly
@@ -421,7 +420,7 @@ def time_series_cross_validation(df: pd.DataFrame, n_splits: int = 3) -> List[Tu
 
 def optimize_hyperparameters(
     df: pd.DataFrame,
-    clustering_enabled: bool = True,
+    clustering_enabled: bool = False,
     task: str = "classification"
 ) -> Dict:
     """
@@ -568,7 +567,7 @@ def optimize_hyperparameters(
 
 def fit_advanced_pipeline(
     df: pd.DataFrame,
-    include_clustering: bool = True,
+    include_clustering: bool = False,
     hyperopt_enabled: bool = True,
     task: str = "classification",
     train_seasons: List[int] = None,
