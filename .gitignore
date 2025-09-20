@@ -1,11 +1,12 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
 
 # dependencies
 /node_modules
 
-# next.js
-/.next/
-/out/
+# claude stuff
+/.claude
+CLAUDE.md
+Model_Description.md
 
 # production
 /build
@@ -25,3 +26,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# virtual enviornment
+/venv

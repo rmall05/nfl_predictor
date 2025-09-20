@@ -1,35 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python:*)",
-      "Bash(find:*)",
-      "Bash(pip install:*)",
-      "WebFetch(domain:v0.app)",
-      "Read(//c/Users/Rakendu Malladi/Downloads/**)",
-      "Bash(unzip:*)",
-      "Bash(npm install)",
-      "Bash(venvScripts:*)",
-      "Bash(.venvScriptsactivate)",
-      "Bash(curl:*)",
-      "Bash(move api.py backend )",
-      "Bash(move simple_api.py backend )",
-      "Bash(move lib backend )",
-      "Bash(move main.py backend )",
-      "Bash(move predictor.py backend )",
-      "Bash(move clustering.py backend )",
-      "Bash(move requirements.txt backend)",
-      "Bash(npm run dev:*)",
-      "Bash(node:*)",
-      "Read(//c/Users/Rakendu Malladi/Desktop/**)",
-      "Bash(cat:*)",
-      "Bash(netstat:*)",
-      "Bash(tasklist)",
-      "Bash(taskkill:*)",
-      "Bash(cmd //c:*)",
-      "Bash(rm:*)",
-      "Bash(dir backend)",
-      "Bash(cmd /c:*)",
-      "Bash(dir)"
+      "Bash(copy \"backend\\artifacts\\*\" \"artifacts\\\")"
     ],
     "deny": [],
     "ask": []
