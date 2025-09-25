@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(copy \"backend\\artifacts\\*\" \"artifacts\\\")"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}

@@ -24,11 +24,13 @@ This system analyzes NFL play-by-play data from 2015-2024 to generate comprehens
 
 ## 🏗️ Architecture
 
-### Backend (Python)
+### Backend (Python Flask)
 - **Data Processing**: `main.py` - NFL play-by-play data ingestion and feature engineering
 - **ML Pipeline**: `predictor.py` - Streamlined XGBoost model with optimal hyperparameters
-- **API Server**: `api.py` - Flask REST API for predictions and team stats
+- **API Server**: `api.py` - Flask REST API with web interface for predictions and team stats
+- **Web Interface**: HTML templates with CSS/JS for interactive dashboard
 - **Model Artifacts**: Trained models, PCA components, and performance metrics
+- **2025 Data Processing**: `process_2025_data.py` and `cache_team_data.py` for new season support
 
 ### Key Components
 1. **Data Pipeline**: Processes 300K+ plays from NFL play-by-play data
@@ -65,11 +67,11 @@ This system analyzes NFL play-by-play data from 2015-2024 to generate comprehens
 
 4. **Run the system**
    ```bash
-   # Train model and start API server
+   # Train model and start API server with web interface
    python api.py
    ```
 
-The API will be available at `http://localhost:5000`
+The application will be available at `http://localhost:5000` with both web interface and API endpoints.
 
 ## 📡 API Usage
 
@@ -91,6 +93,22 @@ curl -X POST http://localhost:5000/api/predict_2025 \
 ```bash
 curl http://localhost:5000/api/teams
 ```
+
+## 🖥️ Web Interface
+
+The application includes a modern web interface accessible at `http://localhost:5000`:
+
+### Dashboard Features
+- **Interactive Game Predictions**: Select teams and get real-time win probability predictions
+- **Team Performance Analytics**: View comprehensive team statistics and metrics
+- **Model Performance Tracking**: Monitor accuracy, training metrics, and feature importance
+- **2025 Season Support**: Predict outcomes for upcoming season games
+- **Responsive Design**: Works on desktop and mobile devices
+
+### Available Pages
+- **Dashboard** (`/`): Main prediction interface and team selection
+- **Performance** (`/performance`): Model metrics, accuracy charts, and technical details
+- **API Documentation**: Interactive API testing interface
 
 ## 📈 Model Details
 
@@ -146,11 +164,20 @@ nfl_predictor/
 ├── backend/
 │   ├── main.py              # Data processing pipeline
 │   ├── predictor.py         # ML model and training
-│   ├── api.py               # Flask REST API
+│   ├── api.py               # Flask REST API with web interface
+│   ├── process_2025_data.py # 2025 season data processing
+│   ├── cache_team_data.py   # Team data caching utilities
 │   ├── requirements.txt     # Python dependencies
+│   ├── templates/           # HTML templates for web interface
+│   │   ├── dashboard.html   # Main prediction interface
+│   │   ├── performance.html # Model performance page
+│   │   └── layout.html      # Base template
+│   ├── static/              # CSS and JavaScript assets
+│   │   ├── css/style.css    # Styling
+│   │   └── js/main.js       # Frontend interactivity
+│   ├── artifacts/           # Trained models and metrics
 │   └── lib/
 │       └── nfl_teams.py     # Team reference data
-├── artifacts/               # Trained models and metrics
 ├── CLAUDE.md               # AI assistant instructions
 ├── Model_Description.md    # Technical model documentation
 └── README.md               # This file

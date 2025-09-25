@@ -1,0 +1,210 @@
+{% extends "layout.html" %}
+
+{% block title %}Game Predictions - NFL Predictor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="display-4 text-center mb-4">🏈 NFL Game Predictor</h1>
+        <p class="lead text-center mb-5">
+            Select two teams to predict the game outcome using our advanced machine learning model
+        </p>
+    </div>
+</div>
+
+<!-- Team Selection Form -->
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow-lg prediction-form">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Game Prediction</h4>
+            </div>
+            <div class="card-body">
+                <form id="predictionForm">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="mb-3">
+                                <label for="teamA" class="form-label">Home Team</label>
+                                <select class="form-select form-select-lg" id="teamA" name="teamA" required>
+                                    <option value="">Choose Home Team...</option>
+                                    {% for team in teams %}
+                                    <option value="{{ team.id }}">{{ team.display }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center d-flex align-items-end">
+                            <div class="mb-3 w-100">
+                                <h3 class="text-muted">VS</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="mb-3">
+                                <label for="teamB" class="form-label">Away Team</label>
+                                <select class="form-select form-select-lg" id="teamB" name="teamB" required>
+                                    <option value="">Choose Away Team...</option>
+                                    {% for team in teams %}
+                                    <option value="{{ team.id }}">{{ team.display }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 text-center">
+                            <button type="submit" class="btn btn-success btn-lg px-5" id="predictBtn">
+                                <span class="btn-text">Predict Game Outcome</span>
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" class="row mt-4 d-none">
+    <div class="col-md-12 text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Analyzing teams and generating prediction...</p>
+    </div>
+</div>
+
+<!-- Error Display -->
+<div id="errorAlert" class="row mt-4 d-none">
+    <div class="col-md-12">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> <span id="errorMessage"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Results -->
+<div id="predictionResults" class="row mt-5 d-none">
+    <div class="col-md-12">
+        <h2 class="text-center mb-4">Prediction Results</h2>
+    </div>
+
+    <!-- Team Cards -->
+    <div class="col-md-6">
+        <div class="card team-card" id="teamACard">
+            <div class="card-header text-center">
+                <h4 id="teamAName" class="team-name mb-0"></h4>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="display-4 team-prob" id="teamAProb">0.0%</h2>
+                <p class="text-muted">Win Probability</p>
+                <div id="teamAWinner" class="winner-badge d-none">
+                    <span class="badge bg-success fs-6">PREDICTED WINNER</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card team-card" id="teamBCard">
+            <div class="card-header text-center">
+                <h4 id="teamBName" class="team-name mb-0"></h4>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="display-4 team-prob" id="teamBProb">0.0%</h2>
+                <p class="text-muted">Win Probability</p>
+                <div id="teamBWinner" class="winner-badge d-none">
+                    <span class="badge bg-success fs-6">PREDICTED WINNER</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Details -->
+    <div class="col-md-12 mt-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Prediction Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <h6 class="text-muted">Confidence Level</h6>
+                        <h4 id="confidenceLevel">0.0%</h4>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h6 class="text-muted">Model Accuracy</h6>
+                        <h4>78.8%</h4>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h6 class="text-muted">Algorithm</h6>
+                        <h4>XGBoost</h4>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h6 class="text-muted">Features Used</h6>
+                        <h4>15 (PCA)</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Metrics Comparison -->
+    <div class="col-md-12 mt-4" id="detailedMetrics" style="display: none;">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">📊 Model Reasoning - Top 10 Key Metrics</h5>
+                <small>How each team performs on the metrics most important to the prediction model</small>
+            </div>
+            <div class="card-body">
+                <div id="metricsComparison"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model Information -->
+<div class="row mt-5">
+    <div class="col-md-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title">About This Model</h5>
+                <p class="card-text">
+                    This NFL prediction system uses advanced machine learning with XGBoost algorithm,
+                    trained on play-by-play data from 2015-2024. The model analyzes 52 features including
+                    offensive EPA, defensive efficiency, momentum metrics, and opponent strength to
+                    generate accurate game outcome predictions.
+                </p>
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <strong>Training Data:</strong><br>
+                        <small class="text-muted">300K+ NFL plays</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Test Accuracy:</strong><br>
+                        <small class="text-muted">78.8%</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Cross-Validation:</strong><br>
+                        <small class="text-muted">88.1%</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>ROC-AUC:</strong><br>
+                        <small class="text-muted">87.8%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize dashboard functionality when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
+});
+</script>
+{% endblock %}

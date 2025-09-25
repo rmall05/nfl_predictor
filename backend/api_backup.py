@@ -179,14 +179,10 @@ def generate_team_matchup_features(team_a_abbr: str, team_b_abbr: str, feature_n
         if stat_name not in team_history.columns:
             return default_value
 
-        # Apply recency weighting: 2025=6x, 2024=4x, 2023=3x, 2022=2x, 2021=1.5x, older=1x
-        weights = {
-            2025: 6.0,  # Maximum weight for current season
-            2024: 4.0,
-            2023: 3.0,
-            2022: 2.0,
-            2021: 1.5
-        }
+        # Apply exponential decay weighting (decay_rate = 0.6)
+        # Formula: weight = decay_rate ^ years_back
+        current_season = 2025
+        decay_rate = 0.6
 
         weighted_sum = 0.0
         total_weight = 0.0
@@ -198,8 +194,9 @@ def generate_team_matchup_features(team_a_abbr: str, team_b_abbr: str, feature_n
             if pd.isna(value):
                 continue
 
-            # Get weight for this season (default to 1.0 for older seasons)
-            weight = weights.get(season, 1.0)
+            # Calculate exponential decay weight based on years back
+            years_back = current_season - season
+            weight = decay_rate ** years_back
 
             weighted_sum += value * weight
             total_weight += weight
@@ -358,140 +355,6 @@ def get_team_stats(team_abbr: str) -> Dict[str, Any]:
         "momentum_score": float(momentum)
     }
 
-def get_top_team_metrics_comparison(team_a_abbr, team_b_abbr):
-    """Get the top 10 most important metrics comparison between two teams"""
-
-    def get_team_metric(team_abbr, stat_name, default_value=0.0):
-        """Get a specific metric for a team using the same weighting as predictions"""
-        team_history = dataset[dataset['team'] == team_abbr]
-        if len(team_history) == 0 or stat_name not in team_history.columns:
-            return default_value
-
-        # Apply recency weighting: 2025=6x, 2024=4x, 2023=3x, 2022=2x, 2021=1.5x, older=1x
-        weights = {
-            2025: 6.0,  # Maximum weight for current season
-            2024: 4.0,
-            2023: 3.0,
-            2022: 2.0,
-            2021: 1.5
-        }
-
-        weighted_sum = 0.0
-        total_weight = 0.0
-
-        for _, row in team_history.iterrows():
-            season = row['season']
-            value = row[stat_name]
-
-            if pd.isna(value):
-                continue
-
-            # Get weight for this season (default to 1.0 for older seasons)
-            weight = weights.get(season, 1.0)
-
-            weighted_sum += value * weight
-            total_weight += weight
-
-        if total_weight == 0:
-            return default_value
-
-        return weighted_sum / total_weight
-
-    metrics = [
-        {
-            "name": "EPA per Play",
-            "teamA_value": get_team_metric(team_a_abbr, 'epa_per_play', 0.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'epa_per_play', 0.0),
-            "format": "decimal3",
-            "description": "Expected Points Added per play - overall offensive efficiency",
-            "category": "Offense",
-            "higher_better": True
-        },
-        {
-            "name": "Success Rate",
-            "teamA_value": get_team_metric(team_a_abbr, 'success_rate', 40.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'success_rate', 40.0),
-            "format": "percentage1",
-            "description": "Percentage of plays that gain positive EPA",
-            "category": "Offense",
-            "higher_better": True
-        },
-        {
-            "name": "Explosive Play Rate",
-            "teamA_value": get_team_metric(team_a_abbr, 'explosive_rate', 15.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'explosive_rate', 15.0),
-            "format": "percentage1",
-            "description": "Percentage of plays gaining 20+ yards",
-            "category": "Offense",
-            "higher_better": True
-        },
-        {
-            "name": "Third Down Conversion",
-            "teamA_value": get_team_metric(team_a_abbr, 'third_down_conv_rate', 40.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'third_down_conv_rate', 40.0),
-            "format": "percentage1",
-            "description": "Success rate on third down attempts",
-            "category": "Situational",
-            "higher_better": True
-        },
-        {
-            "name": "Red Zone TD Rate",
-            "teamA_value": get_team_metric(team_a_abbr, 'red_zone_td_rate', 55.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'red_zone_td_rate', 55.0),
-            "format": "percentage1",
-            "description": "Touchdown rate in red zone possessions",
-            "category": "Situational",
-            "higher_better": True
-        },
-        {
-            "name": "Defensive EPA Allowed",
-            "teamA_value": get_team_metric(team_a_abbr, 'allowed_epa_per_play', 0.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'allowed_epa_per_play', 0.0),
-            "format": "decimal3",
-            "description": "EPA per play allowed to opponents (lower is better)",
-            "category": "Defense",
-            "higher_better": False
-        },
-        {
-            "name": "Pressure Rate",
-            "teamA_value": get_team_metric(team_a_abbr, 'pressure_sack_rate', 25.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'pressure_sack_rate', 25.0),
-            "format": "percentage1",
-            "description": "Rate of QB pressures and sacks generated",
-            "category": "Defense",
-            "higher_better": True
-        },
-        {
-            "name": "Momentum Score",
-            "teamA_value": get_team_metric(team_a_abbr, 'momentum_score', 0.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'momentum_score', 0.0),
-            "format": "decimal2",
-            "description": "Recent performance trend vs season average",
-            "category": "Momentum",
-            "higher_better": True
-        },
-        {
-            "name": "Turnover Rate",
-            "teamA_value": get_team_metric(team_a_abbr, 'turnover_rate', 12.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'turnover_rate', 12.0),
-            "format": "percentage1",
-            "description": "Rate of turnovers per drive (lower is better)",
-            "category": "Turnovers",
-            "higher_better": False
-        },
-        {
-            "name": "Opponent Strength",
-            "teamA_value": get_team_metric(team_a_abbr, 'opp_season_epa_avg', 0.0),
-            "teamB_value": get_team_metric(team_b_abbr, 'opp_season_epa_avg', 0.0),
-            "format": "decimal3",
-            "description": "Average quality of opponents faced this season",
-            "category": "Schedule",
-            "higher_better": True
-        }
-    ]
-
-    return metrics
-
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
@@ -594,8 +457,7 @@ def predict_game():
             "confidence": int(confidence),
             "key_factors": key_factors,
             "teamA_stats": get_team_stats(team_a_abbr),
-            "teamB_stats": get_team_stats(team_b_abbr),
-            "detailed_metrics": get_top_team_metrics_comparison(team_a_abbr, team_b_abbr)
+            "teamB_stats": get_team_stats(team_b_abbr)
         })
 
     except Exception as e:
@@ -758,8 +620,7 @@ def predict_2025_season():
 @app.route('/')
 def dashboard():
     """Main dashboard page with game prediction interface"""
-    # Create team list with just team names (not city names)
-    teams = [{"id": team["id"], "name": team["name"], "display": team["name"]} for team in NFL_TEAMS]
+    teams = list(TEAM_MAPPING.values())
     return render_template('dashboard.html', teams=teams)
 
 @app.route('/performance')

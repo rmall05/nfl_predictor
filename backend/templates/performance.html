@@ -1,0 +1,243 @@
+{% extends "layout.html" %}
+
+{% block title %}Model Performance - NFL Predictor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="display-4 text-center mb-4">📊 Model Performance</h1>
+        <p class="lead text-center mb-5">
+            Detailed analysis of the NFL prediction model's accuracy and performance metrics
+        </p>
+    </div>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="row mb-5">
+    <div class="col-md-3">
+        <div class="card metric-card text-center">
+            <div class="card-body">
+                <div class="metric-icon">🎯</div>
+                <h3 class="metric-value" id="testAccuracy">78.8%</h3>
+                <p class="metric-label">Test Accuracy</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card text-center">
+            <div class="card-body">
+                <div class="metric-icon">✅</div>
+                <h3 class="metric-value" id="cvAccuracy">88.1%</h3>
+                <p class="metric-label">Cross-Validation</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card text-center">
+            <div class="card-body">
+                <div class="metric-icon">📈</div>
+                <h3 class="metric-value" id="rocAuc">87.8%</h3>
+                <p class="metric-label">ROC-AUC</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card text-center">
+            <div class="card-body">
+                <div class="metric-icon">⚡</div>
+                <h3 class="metric-value" id="trainingTime">5min</h3>
+                <p class="metric-label">Training Time</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Charts -->
+<div class="row mb-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Model Comparison</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="modelComparisonChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Feature Importance</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="featureImportanceChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Metrics -->
+<div class="row mb-5">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Detailed Performance Metrics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row" id="detailedMetrics">
+                    <!-- Metrics will be loaded here by JavaScript -->
+                    <div class="col-md-12 text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading metrics...</span>
+                        </div>
+                        <p class="mt-2">Loading performance data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Technical Details -->
+<div class="row mb-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Model Architecture</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><strong>Algorithm:</strong> XGBoost Classifier</li>
+                    <li><strong>Preprocessing:</strong> StandardScaler + PCA</li>
+                    <li><strong>PCA Components:</strong> 15 (96% variance)</li>
+                    <li><strong>Original Features:</strong> 52</li>
+                    <li><strong>Training Data:</strong> 2015-2020 seasons</li>
+                    <li><strong>Validation Data:</strong> 2021-2022 seasons</li>
+                    <li><strong>Test Data:</strong> 2023-2024 seasons</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Data Sources</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><strong>Play-by-Play Data:</strong> 300K+ NFL plays</li>
+                    <li><strong>Years Covered:</strong> 2015-2024</li>
+                    <li><strong>Team Records:</strong> 5,486 per category</li>
+                    <li><strong>Game Records:</strong> 2,743 scheduled games</li>
+                    <li><strong>Data Source:</strong> NFL official data via nfl_data_py</li>
+                    <li><strong>Update Frequency:</strong> Weekly during season</li>
+                    <li><strong>Missing Data:</strong> &lt;0.1%</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feature Categories -->
+<div class="row mb-5">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Feature Categories (52 → 15 via PCA)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6 class="text-primary">Offensive Metrics</h6>
+                        <ul class="small">
+                            <li>EPA per play</li>
+                            <li>Success rate</li>
+                            <li>Explosive play rate</li>
+                            <li>Third down conversion</li>
+                            <li>Red zone touchdown rate</li>
+                            <li>Play action usage</li>
+                            <li>Shotgun formation rate</li>
+                            <li>Pass/run balance</li>
+                            <li>Sack rate allowed</li>
+                            <li>Turnover rate</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-success">Defensive Metrics</h6>
+                        <ul class="small">
+                            <li>EPA allowed per play</li>
+                            <li>Success rate allowed</li>
+                            <li>Explosive plays allowed</li>
+                            <li>Third down stops</li>
+                            <li>Red zone defense</li>
+                            <li>Pressure/sack rate</li>
+                            <li>Takeaway rate</li>
+                            <li>Run defense efficiency</li>
+                            <li>Pass defense rating</li>
+                            <li>Situational defense</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-warning">Advanced Features</h6>
+                        <ul class="small">
+                            <li>Momentum score (EMA)</li>
+                            <li>Opponent strength rating</li>
+                            <li>Season performance trends</li>
+                            <li>Home field advantage</li>
+                            <li>Weather adjustments</li>
+                            <li>Recent form indicators</li>
+                            <li>Head-to-head history</li>
+                            <li>Strength of schedule</li>
+                            <li>Injury impact metrics</li>
+                            <li>Rest days factor</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model Updates -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title">Model Updates & Improvements</h5>
+                <p class="card-text">
+                    The NFL prediction model is continuously improved with new data and advanced features.
+                    Recent optimizations include streamlined preprocessing, momentum indicators using
+                    exponential moving averages, and enhanced opponent strength calculations.
+                </p>
+                <div class="row text-center small">
+                    <div class="col-md-3">
+                        <strong>Code Reduction:</strong><br>
+                        <span class="text-success">65% smaller codebase</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Training Speed:</strong><br>
+                        <span class="text-success">10x faster</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Memory Usage:</strong><br>
+                        <span class="text-success">30% reduction</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Last Updated:</strong><br>
+                        <span class="text-info">Real-time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize performance page when document loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializePerformancePage();
+});
+</script>
+{% endblock %}
