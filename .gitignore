@@ -40,7 +40,6 @@ venv.bak/
 # Claude AI files (do not commit)
 .claude/
 CLAUDE.md
-Instructions.md
 Model_Description.md
 *.claude.*
 

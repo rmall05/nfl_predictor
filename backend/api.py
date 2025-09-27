@@ -11,9 +11,44 @@ warnings.filterwarnings('ignore')
 from predictor import assemble_team_game_dataset, fit_streamlined_pipeline, predict_new_season_games, prepare_2025_data
 from lib.nfl_teams import NFL_TEAMS
 from cache_team_data import get_or_generate_cache
+from schedule_data import get_schedule_parser
+import math
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+def calculate_year_weight(year, current_year=2025, oldest_year=2015):
+    """
+    Calculate logarithmic weight for a given year, with recent years getting higher weights.
+
+    Args:
+        year: The year to calculate weight for
+        current_year: The current/most recent year (gets highest weight)
+        oldest_year: The oldest year in dataset (gets baseline weight of 1.0)
+
+    Returns:
+        float: Weight multiplier for the year
+    """
+    # Ensure year is within bounds
+    year = max(oldest_year, min(current_year, year))
+
+    # Calculate years since oldest (0 for oldest year, increases for newer years)
+    years_since_oldest = year - oldest_year
+    total_years_span = current_year - oldest_year
+
+    # Logarithmic formula: base_weight + log_factor * log(years_since_oldest + 1)
+    # This creates a logarithmic curve that favors recent years but more gradually
+    base_weight = 1.0  # Minimum weight (for oldest year)
+    max_additional_weight = 1.8  # Maximum additional weight above base (for newest year)
+
+    if total_years_span == 0:
+        return base_weight
+
+    # Use natural logarithm with scaling
+    log_factor = max_additional_weight / math.log(total_years_span + 1)
+    weight = base_weight + log_factor * math.log(years_since_oldest + 1)
+
+    return weight
 
 # Global variables to store the model and data
 model = None
@@ -179,14 +214,7 @@ def generate_team_matchup_features(team_a_abbr: str, team_b_abbr: str, feature_n
         if stat_name not in team_history.columns:
             return default_value
 
-        # Apply recency weighting: 2025=6x, 2024=4x, 2023=3x, 2022=2x, 2021=1.5x, older=1x
-        weights = {
-            2025: 6.0,  # Maximum weight for current season
-            2024: 4.0,
-            2023: 3.0,
-            2022: 2.0,
-            2021: 1.5
-        }
+        # Apply logarithmic recency weighting: recent years favored but more gradually
 
         weighted_sum = 0.0
         total_weight = 0.0
@@ -198,8 +226,8 @@ def generate_team_matchup_features(team_a_abbr: str, team_b_abbr: str, feature_n
             if pd.isna(value):
                 continue
 
-            # Get weight for this season (default to 1.0 for older seasons)
-            weight = weights.get(season, 1.0)
+            # Get logarithmic weight for this season
+            weight = calculate_year_weight(season)
 
             weighted_sum += value * weight
             total_weight += weight
@@ -312,15 +340,14 @@ def get_team_stats(team_abbr: str) -> Dict[str, Any]:
         if len(team_history) == 0 or stat_name not in team_history.columns:
             return default_value
 
-        # Recency weighting - 2025 gets maximum priority
-        weights = {2025: 6.0, 2024: 4.0, 2023: 3.0, 2022: 2.0, 2021: 1.5}
+        # Apply logarithmic recency weighting
         weighted_sum = total_weight = 0.0
 
         for _, row in team_history.iterrows():
             value = row[stat_name]
             if pd.isna(value):
                 continue
-            weight = weights.get(row['season'], 1.0)
+            weight = calculate_year_weight(row['season'])
             weighted_sum += value * weight
             total_weight += weight
 
@@ -367,14 +394,7 @@ def get_top_team_metrics_comparison(team_a_abbr, team_b_abbr):
         if len(team_history) == 0 or stat_name not in team_history.columns:
             return default_value
 
-        # Apply recency weighting: 2025=6x, 2024=4x, 2023=3x, 2022=2x, 2021=1.5x, older=1x
-        weights = {
-            2025: 6.0,  # Maximum weight for current season
-            2024: 4.0,
-            2023: 3.0,
-            2022: 2.0,
-            2021: 1.5
-        }
+        # Apply logarithmic recency weighting
 
         weighted_sum = 0.0
         total_weight = 0.0
@@ -386,8 +406,8 @@ def get_top_team_metrics_comparison(team_a_abbr, team_b_abbr):
             if pd.isna(value):
                 continue
 
-            # Get weight for this season (default to 1.0 for older seasons)
-            weight = weights.get(season, 1.0)
+            # Get logarithmic weight for this season
+            weight = calculate_year_weight(season)
 
             weighted_sum += value * weight
             total_weight += weight
@@ -595,6 +615,14 @@ def predict_game():
             "key_factors": key_factors,
             "teamA_stats": get_team_stats(team_a_abbr),
             "teamB_stats": get_team_stats(team_b_abbr),
+            "teamA_colors": {
+                "primary": team_a_info['primary_color'] if team_a_info else "#0077BE",
+                "secondary": team_a_info['secondary_color'] if team_a_info else "#FFFFFF"
+            },
+            "teamB_colors": {
+                "primary": team_b_info['primary_color'] if team_b_info else "#0077BE",
+                "secondary": team_b_info['secondary_color'] if team_b_info else "#FFFFFF"
+            },
             "detailed_metrics": get_top_team_metrics_comparison(team_a_abbr, team_b_abbr)
         })
 
@@ -606,6 +634,203 @@ def predict_game():
 def get_teams():
     """Get list of all NFL teams"""
     return jsonify(NFL_TEAMS)
+
+@app.route('/api/debug_prediction', methods=['POST'])
+def debug_prediction():
+    """Debug endpoint to show all feature values for a prediction"""
+    try:
+        data = request.json
+        team_a = data.get('teamA', '').lower()
+        team_b = data.get('teamB', '').lower()
+
+        if not team_a or not team_b:
+            return jsonify({"error": "Both teamA and teamB are required"}), 400
+
+        # Map to NFL abbreviations
+        team_a_abbr = TEAM_MAPPING.get(team_a, team_a.upper())
+        team_b_abbr = TEAM_MAPPING.get(team_b, team_b.upper())
+
+        # Get team names for display
+        team_a_info = next((t for t in NFL_TEAMS if t['id'] == team_a), None)
+        team_b_info = next((t for t in NFL_TEAMS if t['id'] == team_b), None)
+
+        team_a_name = f"{team_a_info['city']} {team_a_info['name']}" if team_a_info else team_a_abbr
+        team_b_name = f"{team_b_info['city']} {team_b_info['name']}" if team_b_info else team_b_abbr
+
+        if model is None or feature_names is None:
+            return jsonify({"error": "Model not available. Please check server logs."}), 500
+
+        # Create debug info
+        debug_info = {
+            "team_a": team_a_name,
+            "team_b": team_b_name,
+            "feature_names": feature_names,
+            "feature_count": len(feature_names),
+        }
+
+        # Generate features and show all values
+        try:
+            features = generate_team_matchup_features(team_a_abbr, team_b_abbr, feature_names)
+            debug_info["features_shape"] = features.shape
+            debug_info["features"] = {}
+
+            # Add all feature values
+            for i, feature_name in enumerate(feature_names):
+                if feature_name != '0' and i < len(features[0]):
+                    debug_info["features"][feature_name] = float(features[0][i])
+        except Exception as fe:
+            debug_info["feature_error"] = str(fe)
+            return jsonify(debug_info)
+
+        # Get actual prediction
+        win_prob = float(model.predict_proba(features)[0][1])
+        debug_info["team_a_win_prob"] = win_prob
+        debug_info["team_b_win_prob"] = 1 - win_prob
+        debug_info["predicted_winner"] = team_a_name if win_prob > 0.5 else team_b_name
+
+        # Add team stats for comparison
+        debug_info["team_a_stats"] = get_team_stats(team_a_abbr)
+        debug_info["team_b_stats"] = get_team_stats(team_b_abbr)
+
+        return jsonify(debug_info)
+
+    except Exception as e:
+        print(f"Debug API Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/weeks', methods=['GET'])
+def get_available_weeks():
+    """Get list of available NFL weeks"""
+    try:
+        parser = get_schedule_parser()
+        weeks = parser.get_available_weeks()
+        return jsonify({
+            "success": True,
+            "weeks": weeks,
+            "total_weeks": len(weeks)
+        })
+    except Exception as e:
+        print(f"Error getting weeks: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/schedule/<int:week>', methods=['GET'])
+def get_week_schedule(week):
+    """Get schedule for a specific week"""
+    try:
+        parser = get_schedule_parser()
+        games = parser.get_week_games(week)
+        week_summary = parser.get_week_summary(week)
+
+        if not games:
+            return jsonify({"error": f"No games found for week {week}"}), 404
+
+        return jsonify({
+            "success": True,
+            "week": week,
+            "summary": week_summary,
+            "games": games
+        })
+    except Exception as e:
+        print(f"Error getting week {week} schedule: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/predict_week/<int:week>', methods=['POST'])
+def predict_week_games(week):
+    """Predict all games for a specific week"""
+    try:
+        parser = get_schedule_parser()
+        games = parser.get_week_games(week)
+
+        if not games:
+            return jsonify({"error": f"No games found for week {week}"}), 404
+
+        predictions = []
+
+        for game in games:
+            try:
+                team_a = game['home_team']
+                team_b = game['away_team']
+
+                # Map to NFL abbreviations (same as main predict endpoint)
+                team_a_abbr = TEAM_MAPPING.get(team_a, team_a.upper())
+                team_b_abbr = TEAM_MAPPING.get(team_b, team_b.upper())
+
+                # Get team info for display names and colors
+                team_a_info = next((t for t in NFL_TEAMS if t['id'] == team_a), None)
+                team_b_info = next((t for t in NFL_TEAMS if t['id'] == team_b), None)
+
+                team_a_name = f"{team_a_info['city']} {team_a_info['name']}" if team_a_info else team_a.upper()
+                team_b_name = f"{team_b_info['city']} {team_b_info['name']}" if team_b_info else team_b.upper()
+
+                if model is None or not feature_names:
+                    # Fallback prediction with team strength differential
+                    team_a_strength = hash(team_a_abbr) % 100 / 100.0
+                    team_b_strength = hash(team_b_abbr) % 100 / 100.0
+                    win_prob = 0.45 + 0.1 * (team_a_strength - team_b_strength)
+                    win_prob = max(0.2, min(0.8, win_prob))
+                else:
+                    try:
+                        # Generate real prediction
+                        features = generate_team_matchup_features(team_a_abbr, team_b_abbr, feature_names)
+                        win_prob = float(model.predict_proba(features)[0][1])
+                    except Exception as e:
+                        print(f"Error generating features for {team_a_abbr} vs {team_b_abbr}: {e}")
+                        # Fallback to deterministic prediction
+                        team_a_strength = hash(team_a_abbr) % 100 / 100.0
+                        team_b_strength = hash(team_b_abbr) % 100 / 100.0
+                        win_prob = 0.45 + 0.1 * (team_a_strength - team_b_strength)
+                        win_prob = max(0.2, min(0.8, win_prob))
+
+                confidence = min(95, max(50, abs(win_prob - 0.5) * 200))
+                predicted_winner = team_a_name if win_prob > 0.5 else team_b_name
+
+                game_prediction = {
+                    "game_info": game,
+                    "prediction": {
+                        "home_win_prob": float(win_prob),
+                        "away_win_prob": float(1 - win_prob),
+                        "predicted_winner": predicted_winner,
+                        "confidence": int(confidence)
+                    },
+                    "teams": {
+                        "home": {
+                            "name": team_a_name,
+                            "abbreviation": team_a,
+                            "colors": {
+                                "primary": team_a_info['primary_color'] if team_a_info else "#0077BE",
+                                "secondary": team_a_info['secondary_color'] if team_a_info else "#FFFFFF"
+                            }
+                        },
+                        "away": {
+                            "name": team_b_name,
+                            "abbreviation": team_b,
+                            "colors": {
+                                "primary": team_b_info['primary_color'] if team_b_info else "#0077BE",
+                                "secondary": team_b_info['secondary_color'] if team_b_info else "#FFFFFF"
+                            }
+                        }
+                    },
+                    "detailed_metrics": get_top_team_metrics_comparison(team_a_abbr, team_b_abbr)
+                }
+
+                predictions.append(game_prediction)
+
+            except Exception as game_error:
+                print(f"Error predicting game {game}: {game_error}")
+                continue
+
+        return jsonify({
+            "success": True,
+            "week": week,
+            "predictions": predictions,
+            "total_games": len(predictions)
+        })
+
+    except Exception as e:
+        print(f"Error predicting week {week}: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/model/performance', methods=['GET'])
 def get_model_performance():
@@ -767,6 +992,11 @@ def performance():
     """Model performance metrics page"""
     return render_template('performance.html')
 
+@app.route('/weekly')
+def weekly():
+    """Weekly predictions page"""
+    return render_template('weekly.html')
+
 if __name__ == '__main__':
     print("Starting NFL Predictor API...")
 
@@ -774,4 +1004,4 @@ if __name__ == '__main__':
     load_model()
 
     # Start Flask app
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)

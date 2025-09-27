@@ -217,7 +217,7 @@ function displayPredictionResults(result, teamA, teamB) {
 
     // Display detailed metrics if available
     if (result.detailed_metrics) {
-        displayDetailedMetrics(result.detailed_metrics, teamAName, teamBName);
+        displayDetailedMetrics(result.detailed_metrics, teamAName, teamBName, result.teamA_colors, result.teamB_colors);
         showElement('detailedMetrics');
         document.getElementById('detailedMetrics').style.display = 'block';
     }
@@ -228,9 +228,13 @@ function displayPredictionResults(result, teamA, teamB) {
     }, 100);
 }
 
-function displayDetailedMetrics(metrics, teamAName, teamBName) {
+function displayDetailedMetrics(metrics, teamAName, teamBName, teamAColors, teamBColors) {
     const container = document.getElementById('metricsComparison');
     if (!container) return;
+
+    // Default colors if not provided
+    const teamA_color = teamAColors?.primary || '#0077BE';
+    const teamB_color = teamBColors?.primary || '#0077BE';
 
     // Helper function to format values based on format type
     function formatValue(value, format) {
@@ -260,8 +264,8 @@ function displayDetailedMetrics(metrics, teamAName, teamBName) {
         <div class="row mb-3">
             <div class="col-md-12">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="text-primary mb-0">${teamAName}</h6>
-                    <h6 class="text-info mb-0">${teamBName}</h6>
+                    <h6 class="mb-0" style="color: ${teamA_color}; font-weight: bold;">${teamAName}</h6>
+                    <h6 class="mb-0" style="color: ${teamB_color}; font-weight: bold;">${teamBName}</h6>
                 </div>
             </div>
         </div>
@@ -294,7 +298,7 @@ function displayDetailedMetrics(metrics, teamAName, teamBName) {
                             <small class="text-muted">${metric.description}</small>
                         </div>
                         <div class="col-md-3 text-center">
-                            <span class="metric-value ${betterTeam === 'A' ? 'text-success fw-bold' : ''} ${betterTeam === 'B' ? 'text-muted' : ''}">
+                            <span class="metric-value fw-bold" style="color: ${teamA_color};">
                                 ${formatValue(metric.teamA_value, metric.format)}
                                 ${betterTeam === 'A' ? ' ✓' : ''}
                             </span>
@@ -302,17 +306,17 @@ function displayDetailedMetrics(metrics, teamAName, teamBName) {
                         <div class="col-md-3 text-center">
                             <div class="metric-bar">
                                 <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-primary" role="progressbar"
-                                         style="width: ${Math.abs(metric.teamA_value) / (Math.abs(metric.teamA_value) + Math.abs(metric.teamB_value)) * 100}%">
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: ${Math.abs(metric.teamA_value) / (Math.abs(metric.teamA_value) + Math.abs(metric.teamB_value)) * 100}%; background-color: ${teamA_color};">
                                     </div>
-                                    <div class="progress-bar bg-info" role="progressbar"
-                                         style="width: ${Math.abs(metric.teamB_value) / (Math.abs(metric.teamA_value) + Math.abs(metric.teamB_value)) * 100}%">
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: ${Math.abs(metric.teamB_value) / (Math.abs(metric.teamA_value) + Math.abs(metric.teamB_value)) * 100}%; background-color: ${teamB_color};">
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3 text-center">
-                            <span class="metric-value ${betterTeam === 'B' ? 'text-success fw-bold' : ''} ${betterTeam === 'A' ? 'text-muted' : ''}">
+                            <span class="metric-value fw-bold" style="color: ${teamB_color};">
                                 ${formatValue(metric.teamB_value, metric.format)}
                                 ${betterTeam === 'B' ? ' ✓' : ''}
                             </span>
@@ -326,6 +330,367 @@ function displayDetailedMetrics(metrics, teamAName, teamBName) {
     });
 
     container.innerHTML = html;
+}
+
+// Weekly Predictions Page Functions
+function initializeWeeklyPage() {
+    console.log('Initializing Weekly Predictions Page...');
+
+    // Load available weeks
+    loadAvailableWeeks();
+
+    // Set up event handlers
+    const weekSelector = document.getElementById('weekSelector');
+    const predictBtn = document.getElementById('predictWeekBtn');
+
+    if (weekSelector) {
+        weekSelector.addEventListener('change', handleWeekSelection);
+    }
+
+    if (predictBtn) {
+        predictBtn.addEventListener('click', handlePredictWeek);
+    }
+}
+
+async function loadAvailableWeeks() {
+    try {
+        const response = await callAPI('/api/weeks');
+        const weekSelector = document.getElementById('weekSelector');
+
+        if (response.success && weekSelector) {
+            // Clear existing options except the first one
+            weekSelector.innerHTML = '<option value="">Choose Week...</option>';
+
+            // Add week options
+            response.weeks.forEach(week => {
+                const option = document.createElement('option');
+                option.value = week;
+                option.textContent = `Week ${week}`;
+                weekSelector.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Failed to load weeks:', error);
+        showWeeklyError('Failed to load available weeks');
+    }
+}
+
+async function handleWeekSelection(event) {
+    const week = parseInt(event.target.value);
+    const predictBtn = document.getElementById('predictWeekBtn');
+    const weekInfo = document.getElementById('weekInfo');
+
+    if (!week) {
+        predictBtn.disabled = true;
+        weekInfo.innerHTML = '<small class="text-muted">Select a week to see games</small>';
+        hideWeeklyResults();
+        return;
+    }
+
+    try {
+        // Enable predict button
+        predictBtn.disabled = false;
+
+        // Load week schedule info
+        const response = await callAPI(`/api/schedule/${week}`);
+
+        if (response.success) {
+            const summary = response.summary;
+            const gameCount = response.games.length;
+
+            let dateInfo = '';
+            if (summary.date_range && summary.date_range.start) {
+                const startDate = new Date(summary.date_range.start).toLocaleDateString();
+                const endDate = summary.date_range.end ?
+                    new Date(summary.date_range.end).toLocaleDateString() : startDate;
+
+                dateInfo = startDate === endDate ?
+                    `<br><small class="text-muted">${startDate}</small>` :
+                    `<br><small class="text-muted">${startDate} - ${endDate}</small>`;
+            }
+
+            weekInfo.innerHTML = `
+                <strong>${gameCount} games</strong>${dateInfo}
+            `;
+        }
+    } catch (error) {
+        console.error('Failed to load week info:', error);
+        weekInfo.innerHTML = '<small class="text-danger">Error loading week info</small>';
+    }
+}
+
+async function handlePredictWeek(event) {
+    const weekSelector = document.getElementById('weekSelector');
+    const week = parseInt(weekSelector.value);
+
+    if (!week) return;
+
+    try {
+        showWeeklyLoading();
+        hideWeeklyError();
+        hideWeeklyResults();
+
+        console.log(`Predicting games for week ${week}`);
+
+        const response = await callAPI(`/api/predict_week/${week}`, 'POST');
+
+        if (response.success) {
+            displayWeeklyPredictions(response, week);
+        } else {
+            throw new Error(response.error || 'Prediction failed');
+        }
+
+    } catch (error) {
+        console.error('Weekly prediction error:', error);
+        showWeeklyError('Failed to generate weekly predictions. Please try again.');
+    } finally {
+        hideWeeklyLoading();
+    }
+}
+
+function displayWeeklyPredictions(response, week) {
+    const predictions = response.predictions;
+
+    // Show week summary
+    showWeekSummary(week, predictions);
+
+    // Display individual games
+    displayWeeklyGames(predictions);
+
+    // Show statistics
+    displayWeekStats(predictions);
+
+    // Show results section
+    showElement('weeklyPredictions');
+    showElement('weekStats');
+}
+
+function showWeekSummary(week, predictions) {
+    const weekTitle = document.getElementById('weekTitle');
+    const weekDetails = document.getElementById('weekDetails');
+
+    if (weekTitle && weekDetails) {
+        weekTitle.textContent = `Week ${week} Predictions`;
+        weekDetails.textContent = `Generated predictions for ${predictions.length} games using machine learning analysis`;
+        showElement('weekSummary');
+    }
+}
+
+function displayWeeklyGames(predictions) {
+    const container = document.getElementById('gamesContainer');
+    const template = document.getElementById('gameCardTemplate');
+
+    if (!container || !template) return;
+
+    container.innerHTML = '';
+
+    predictions.forEach((prediction, index) => {
+        const gameCard = createGameCard(prediction, index);
+        container.appendChild(gameCard);
+    });
+}
+
+function createGameCard(prediction, index) {
+    const template = document.getElementById('gameCardTemplate');
+    const gameCard = template.firstElementChild.cloneNode(true);
+
+    const game = prediction.game_info;
+    const pred = prediction.prediction;
+    const teams = prediction.teams;
+
+    // Set team names and colors
+    const homeNameEl = gameCard.querySelector('[data-team="home"]');
+    const awayNameEl = gameCard.querySelector('[data-team="away"]');
+
+    if (homeNameEl) {
+        homeNameEl.textContent = teams.home.name;
+        homeNameEl.style.color = teams.home.colors.primary;
+    }
+
+    if (awayNameEl) {
+        awayNameEl.textContent = teams.away.name;
+        awayNameEl.style.color = teams.away.colors.primary;
+    }
+
+    // Set probabilities
+    const homeProbEl = gameCard.querySelector('[data-team="home"]').nextElementSibling;
+    const awayProbEl = gameCard.querySelector('[data-team="away"]').nextElementSibling;
+
+    if (homeProbEl) {
+        homeProbEl.textContent = `${(pred.home_win_prob * 100).toFixed(1)}%`;
+        homeProbEl.style.color = teams.home.colors.primary;
+        homeProbEl.classList.add('fw-bold');
+    }
+
+    if (awayProbEl) {
+        awayProbEl.textContent = `${(pred.away_win_prob * 100).toFixed(1)}%`;
+        awayProbEl.style.color = teams.away.colors.primary;
+        awayProbEl.classList.add('fw-bold');
+    }
+
+    // Set predicted winner
+    const winnerBadge = gameCard.querySelector('.winner-badge');
+    if (winnerBadge) {
+        winnerBadge.textContent = `${pred.predicted_winner} (${pred.confidence}% confidence)`;
+    }
+
+    // Set game details
+    const gameDetails = gameCard.querySelector('.game-details');
+    if (gameDetails) {
+        const gameDate = new Date(game.date).toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+        });
+        gameDetails.innerHTML = `${gameDate} • ${game.time} • ${game.location}`;
+    }
+
+    // Set up collapsible metrics
+    const collapseButton = gameCard.querySelector('[data-bs-toggle="collapse"]');
+    const collapseTarget = gameCard.querySelector('[data-metrics-container]');
+
+    if (collapseButton && collapseTarget) {
+        const collapseId = `metrics-${index}`;
+        collapseTarget.id = collapseId;
+        collapseButton.setAttribute('data-bs-target', `#${collapseId}`);
+        collapseButton.setAttribute('aria-controls', collapseId);
+
+        // Add metrics to the collapse container
+        const metricsContainer = collapseTarget.querySelector('.metrics-comparison-mini');
+        if (metricsContainer && prediction.detailed_metrics) {
+            metricsContainer.innerHTML = createMiniMetricsDisplay(
+                prediction.detailed_metrics.slice(0, 5), // Show top 5 metrics
+                teams.home.name,
+                teams.away.name,
+                teams.home.colors.primary,
+                teams.away.colors.primary
+            );
+        }
+    }
+
+    return gameCard;
+}
+
+function createMiniMetricsDisplay(metrics, teamAName, teamBName, teamAColor, teamBColor) {
+    let html = '';
+
+    metrics.forEach(metric => {
+        const betterTeam = metric.higher_better ?
+            (metric.teamA_value > metric.teamB_value ? 'A' : 'B') :
+            (metric.teamA_value < metric.teamB_value ? 'A' : 'B');
+
+        html += `
+            <div class="row align-items-center mb-2">
+                <div class="col-12 text-center">
+                    <small class="text-muted">${metric.name}</small>
+                </div>
+                <div class="col-6 text-center">
+                    <span style="color: ${teamAColor};" class="${betterTeam === 'A' ? 'fw-bold' : ''}">
+                        ${formatMetricValue(metric.teamA_value, metric.format)}
+                        ${betterTeam === 'A' ? ' ✓' : ''}
+                    </span>
+                </div>
+                <div class="col-6 text-center">
+                    <span style="color: ${teamBColor};" class="${betterTeam === 'B' ? 'fw-bold' : ''}">
+                        ${formatMetricValue(metric.teamB_value, metric.format)}
+                        ${betterTeam === 'B' ? ' ✓' : ''}
+                    </span>
+                </div>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+function formatMetricValue(value, format) {
+    switch(format) {
+        case 'percentage1':
+            return (value * 100).toFixed(1) + '%';
+        case 'decimal2':
+            return value.toFixed(2);
+        case 'decimal3':
+            return value.toFixed(3);
+        default:
+            return value.toFixed(2);
+    }
+}
+
+function displayWeekStats(predictions) {
+    const totalGames = predictions.length;
+    let highConfidence = 0;
+    let closeGames = 0;
+    let totalConfidence = 0;
+
+    predictions.forEach(pred => {
+        const winProb = Math.max(pred.prediction.home_win_prob, pred.prediction.away_win_prob);
+        const confidence = pred.prediction.confidence;
+
+        totalConfidence += confidence;
+
+        if (confidence > 70) {
+            highConfidence++;
+        }
+
+        if (winProb >= 0.45 && winProb <= 0.55) {
+            closeGames++;
+        }
+    });
+
+    const avgConfidence = totalGames > 0 ? (totalConfidence / totalGames).toFixed(1) : 0;
+
+    // Update stats display
+    const totalGamesEl = document.getElementById('totalGames');
+    const highConfidenceEl = document.getElementById('highConfidence');
+    const closeGamesEl = document.getElementById('closeGames');
+    const avgConfidenceEl = document.getElementById('avgConfidence');
+
+    if (totalGamesEl) totalGamesEl.textContent = totalGames;
+    if (highConfidenceEl) highConfidenceEl.textContent = highConfidence;
+    if (closeGamesEl) closeGamesEl.textContent = closeGames;
+    if (avgConfidenceEl) avgConfidenceEl.textContent = avgConfidence + '%';
+}
+
+function showWeeklyLoading() {
+    showElement('weeklyLoadingIndicator');
+    const btn = document.getElementById('predictWeekBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.querySelector('.btn-text').textContent = 'Predicting...';
+        btn.querySelector('.spinner-border').classList.remove('d-none');
+    }
+}
+
+function hideWeeklyLoading() {
+    hideElement('weeklyLoadingIndicator');
+    const btn = document.getElementById('predictWeekBtn');
+    if (btn) {
+        btn.disabled = false;
+        btn.querySelector('.btn-text').textContent = 'Predict All Games';
+        btn.querySelector('.spinner-border').classList.add('d-none');
+    }
+}
+
+function showWeeklyError(message) {
+    const errorMessage = document.getElementById('weeklyErrorMessage');
+    if (errorMessage) {
+        errorMessage.textContent = message;
+        showElement('weeklyErrorAlert');
+
+        setTimeout(() => {
+            hideElement('weeklyErrorAlert');
+        }, 5000);
+    }
+}
+
+function hideWeeklyError() {
+    hideElement('weeklyErrorAlert');
+}
+
+function hideWeeklyResults() {
+    hideElement('weekSummary');
+    hideElement('weeklyPredictions');
+    hideElement('weekStats');
 }
 
 // Performance Page Functions
@@ -567,6 +932,10 @@ document.addEventListener('DOMContentLoaded', function() {
     } else if (currentPath === '/performance') {
         if (typeof initializePerformancePage === 'function') {
             initializePerformancePage();
+        }
+    } else if (currentPath === '/weekly') {
+        if (typeof initializeWeeklyPage === 'function') {
+            initializeWeeklyPage();
         }
     }
 });

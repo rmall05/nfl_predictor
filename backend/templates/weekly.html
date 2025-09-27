@@ -1,0 +1,173 @@
+{% extends "layout.html" %}
+
+{% block title %}Weekly Predictions - NFL Predictor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="display-4 text-center mb-4">🗓️ Weekly Predictions</h1>
+        <p class="lead text-center mb-5">
+            Select an NFL week to predict all games using our advanced machine learning model
+        </p>
+    </div>
+</div>
+
+<!-- Week Selection -->
+<div class="row justify-content-center mb-4">
+    <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Select Week</h4>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <label for="weekSelector" class="form-label">NFL Week</label>
+                        <select class="form-select form-select-lg" id="weekSelector">
+                            <option value="">Choose Week...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <div id="weekInfo" class="mt-3">
+                            <small class="text-muted">Select a week to see games</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-success btn-lg" id="predictWeekBtn" disabled>
+                            <span class="btn-text">Predict All Games</span>
+                            <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="weeklyLoadingIndicator" class="row mt-4 d-none">
+    <div class="col-md-12 text-center">
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading week data and generating predictions...</p>
+    </div>
+</div>
+
+<!-- Error Display -->
+<div id="weeklyErrorAlert" class="row mt-4 d-none">
+    <div class="col-md-12">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> <span id="weeklyErrorMessage"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Week Summary -->
+<div id="weekSummary" class="row mt-4 d-none">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <h5 id="weekTitle" class="mb-2"></h5>
+            <p id="weekDetails" class="mb-0"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Predictions Results -->
+<div id="weeklyPredictions" class="row mt-4 d-none">
+    <div class="col-md-12">
+        <h2 class="text-center mb-4">Week Predictions</h2>
+        <div id="gamesContainer" class="row">
+            <!-- Game cards will be inserted here -->
+        </div>
+    </div>
+</div>
+
+<!-- Individual Game Card Template (hidden) -->
+<div id="gameCardTemplate" class="d-none">
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 game-card">
+            <div class="card-header text-center">
+                <div class="row align-items-center">
+                    <div class="col-5 text-end">
+                        <h6 class="team-name mb-0" data-team="home"></h6>
+                        <span class="team-prob" data-team="home"></span>
+                    </div>
+                    <div class="col-2 text-center">
+                        <strong class="text-muted">VS</strong>
+                    </div>
+                    <div class="col-5 text-start">
+                        <h6 class="team-name mb-0" data-team="away"></h6>
+                        <span class="team-prob" data-team="away"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="predicted-winner mb-2">
+                        <span class="badge bg-success winner-badge"></span>
+                    </div>
+                    <small class="text-muted game-details"></small>
+                </div>
+
+                <!-- Collapsible Key Metrics -->
+                <div class="text-center">
+                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="" aria-expanded="false">
+                        <i class="fas fa-chart-bar"></i> View Key Metrics
+                    </button>
+                </div>
+
+                <div class="collapse mt-3" data-metrics-container>
+                    <div class="card card-body">
+                        <div class="metrics-comparison-mini">
+                            <!-- Key metrics will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Week Statistics Summary -->
+<div id="weekStats" class="row mt-5 d-none">
+    <div class="col-md-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title">Week Summary</h5>
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <strong>Total Games:</strong><br>
+                        <span id="totalGames" class="h4">0</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>High Confidence:</strong><br>
+                        <span id="highConfidence" class="h4">0</span>
+                        <small class="text-muted d-block">(>70% confidence)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Close Games:</strong><br>
+                        <span id="closeGames" class="h4">0</span>
+                        <small class="text-muted d-block">(45-55%)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Avg Confidence:</strong><br>
+                        <span id="avgConfidence" class="h4">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize weekly predictions page
+document.addEventListener('DOMContentLoaded', function() {
+    initializeWeeklyPage();
+});
+</script>
+{% endblock %}
